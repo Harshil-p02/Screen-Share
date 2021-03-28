@@ -6,18 +6,44 @@ import mss
 
 class Client:
 
-    def __init__(self, server, port):
+    def __init__(self, server, port, username):
+        '''
+        creates client-side socket
+
+        :param server: IP of server (Join server)
+        :param port: Port of server
+        '''
         self.SERVER = server
-        self.PORT = port
+        self.PORT = int(port)
+        self.FORMAT = 'utf-8'
+        self.HEADER = 64
+        self.username = username
 
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("here1")
         self.client.connect((self.SERVER, self.PORT))
+        print("here2")
 
-    # def take_image(self):
-    #     pass
+        self.send_msg(username)
+
+        num_users = self.recv_msg()
+        print(num_users)
+
+    def send_msg(self, msg):
+        msg_len = len(msg)
+        send_len = str(msg_len).encode(self.FORMAT)
+        send_len += b' ' * (self.HEADER - len(send_len))
+        self.client.send(send_len)
+        self.client.send(msg.encode(self.FORMAT))
+
+    def recv_msg(self):
+        msg_len = self.client.recv(self.HEADER).decode(self.FORMAT)
+        msg = self.client.recv(int(msg_len)).decode(self.FORMAT)
+        return msg
 
     def share_screen(self):
         # Send participant's name first
+        self.send_msg(self.username)
 
         n = 1
 
@@ -45,10 +71,10 @@ class Client:
 
     def receive_screen(self):
         # get name of the screen showing participant
-        name = self.client.recv(80000).decode('utf-8')
-        cv2.namedWindow(f"Viewing {name}'s screen")
+        name = self.recv_msg()                                      # Truncate the name... 10 chars?
+        cv2.namedWindow(f"Viewing {name[:10]}'s screen - Screen Share")
 
         while True:
             img = self.get_image()
-            cv2.imshow(f"Viewing {name}'s screen", img)
+            cv2.imshow(f"Viewing {name[:10]}'s screen", img)
             cv2.waitKey(delay=10)
