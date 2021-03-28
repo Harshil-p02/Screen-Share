@@ -4,30 +4,33 @@ from PyQt5.QtWidgets import QWidget, QMainWindow, QDesktopWidget, QApplication, 
 from server import Server
 from client import Client
 
+# will probably need a User class to differentiate b/w users            (just save the users as dict in server)
+# Make menus responsive to size changes; fixed size menu?
 
-# will probably need a User class to differentiate b/w users
-
-# Menu:  HOW??
-#   - Enter Username
+# Menu:
+#   - Enter Username; ip, port
 #   - Join a server
-#       ~ Server IP
 #           = Share screen
 #           = Receive screen
 #   - Create a server
-#       ~ Server IP
-#       new window with created server having share and receive options
-#       ~ Invite friends???
+#           Invite friends???
+#           display info.. who joined; their ip..
+#           new window with created server having share and receive options
 
-
+# CAN WE REMOVE PARENT FROM INIT??      Nooo; it helps :)
 class Window(QWidget):
 
-    WIDTH, HEIGHT = 1080, 720                                       # change size
-
-    def __init__(self, parent=None):
+    def __init__(self, parent):
+        '''
+        Home screen of the gui app
+        Gets the username, IP and port number to either join or create a server
+        :param parent: sets the parent of the current instance
+        '''
         super(Window, self).__init__(parent)
-        self.resize(self.WIDTH, self.HEIGHT)
-        self.setWindowTitle("Python Screen Share")
-        self.center()
+
+        self.WIDTH, self.HEIGHT = parent.WIDTH, parent.HEIGHT                   # change these values to change the size of a single menu
+        parent.resize(self.WIDTH, self.HEIGHT)
+        parent.setWindowTitle("Screen Share")
 
         uname_label = QLabel("Username:", parent=self)
         uname_label.move(int(self.WIDTH/2)-200, 100)
@@ -36,69 +39,39 @@ class Window(QWidget):
 
         ip_label = QLabel("Server IP:", parent=self)
         ip_label.move(int(self.WIDTH/2)-200, 150)
-        port_label = QLabel("Server Port:", parent=self)
-        port_label.move(int(self.WIDTH/2)-200, 200)
         self.ip_input = QLineEdit(parent=self)
         self.ip_input.move(int(self.WIDTH/2)-100, 150)
+
+        port_label = QLabel("Server Port:", parent=self)
+        port_label.move(int(self.WIDTH/2)-200, 200)
         self.port_input = QLineEdit(parent=self)
         self.port_input.move(int(self.WIDTH/2)-100, 200)
 
-        self.join_server_btn = self.add_btn(x=int(self.WIDTH/2)-300, y=250, label='Join an existing Server')
-        self.create_server_btn = self.add_btn(x=int(self.WIDTH/2)+100, y=250, label='Create a new Server')
-        # join_server_btn.clicked.connect(self.join_server_menu)      # change screen
-        # create_server_btn.clicked.connect(self.create_server_menu)  # change screen
+        self.join_server_btn = parent.add_btn(x=int(self.WIDTH/2)-300, y=250, label='Join an existing Server', parent=self)
+        self.create_server_btn = parent.add_btn(x=int(self.WIDTH/2)+100, y=250, label='Create a new Server', parent=self)
+    #     Button presses handled in calling function (WindowHandler)
 
-        # self.show()
-
-    def center(self):
-        win = self.frameGeometry()
-        center_pt = QDesktopWidget().availableGeometry().center()
-        win.moveCenter(center_pt)
-
-    def add_btn(self, x, y, label):
-        btn = QPushButton(text=label, parent=self)
-        btn.move(x, y)
-        # btn.show()
-        return btn
-
-    # def join_server_menu(self):
-    #     print("Joined!")
-
-    # def create_server_menu(self):
-    #     print("Created!")
 
 class JoinServerMenu(QWidget):
 
-    WIDTH, HEIGHT = 1080, 720
-
-    def __init__(self, ip, port, username, parent=None):
+    def __init__(self, ip, port, username, parent):
         super(JoinServerMenu, self).__init__(parent)
-        self.resize(self.WIDTH, self.HEIGHT)
-        self.setWindowTitle("Python Screen Share")
-        self.center()
 
-        # Call join_server
+        self.WIDTH, self.HEIGHT = parent.WIDTH, parent.HEIGHT
+        parent.resize(self.WIDTH, self.HEIGHT)
+        parent.setWindowTitle("Join server - Screen Share")
+
         # Display additional info.. num of members, etc..
         self.client = self.join_server(ip, port, username)
 
+        self.share_btn = parent.add_btn(x=int(self.WIDTH/2)-300, y=200, label="Share screen", parent=self)
+        self.receive_btn = parent.add_btn(x=int(self.WIDTH/2)+100, y=200, label="Receive screen", parent=self)
+        self.back = parent.add_btn(x=10, y=10, label="Back", parent=self)
 
-
-        self.share_btn = QPushButton(text="Share screen", parent=self)
-        self.receive_btn = QPushButton(text="Receive screen", parent=self)
-        self.share_btn.move(int(self.WIDTH/2)-300, 200)
-        self.receive_btn.move(int(self.WIDTH/2)+100, 200)
         self.share_btn.clicked.connect(self.share_screen)
         self.receive_btn.clicked.connect(self.receive_screen)
-        self.back = QPushButton(text="Back", parent=self)
-        self.back.move(10, 10)
-
-    def center(self):
-        win = self.frameGeometry()
-        center_pt = QDesktopWidget().availableGeometry().center()
-        win.moveCenter(center_pt)
 
     def join_server(self, server_ip, port, username):
-
         client = Client(server_ip, port, username)    # Fetch username from gui
         print(client)
         return client
@@ -113,45 +86,34 @@ class JoinServerMenu(QWidget):
 
 class CreateServerMenu(QWidget):
 
-    WIDTH, HEIGHT = 1080, 720
-
     def __init__(self, ip, port, username, parent=None):
         super(CreateServerMenu, self).__init__(parent)
+
+        self.WIDTH, self.HEIGHT = parent.WIDTH, parent.HEIGHT
         self.resize(self.WIDTH, self.HEIGHT)
-        self.setWindowTitle("Python Screen Share")
-        self.center()
+        self.setWindowTitle("Create Server - Screen Share")
 
         # Add options
         # Share, invite friends
+        self.back = parent.add_btn(x=10, y=10, label="Back", parent=self)
+        # time.sleep(2)
         self.server = self.create_server(ip, port, username)
-
-        # server_label = QLabel("Enter server IP:", parent=self)
-        # server_label.move(int(self.WIDTH / 2) - 227, 100)
-        # server_input = QLineEdit(parent=self)
-        # server_input.move(int(self.WIDTH / 2) - 100, 100)
-        self.back = QPushButton(text="Back", parent=self)
-        self.back.move(10, 10)
-
-    def center(self):
-        win = self.frameGeometry()
-        center_pt = QDesktopWidget().availableGeometry().center()
-        win.moveCenter(center_pt)
+        print(self.server)
 
     def create_server(self, server_ip, port, username):
-        server = Server(server_ip, port, username)
-        print(server_ip, port)
-        print(server)
-        return server
+        return Server(server_ip, port, username)
         # change screen
+
 
 class WindowHandler(QMainWindow):
 
     WIDTH, HEIGHT = 1080, 720
 
-    def __init__(self, parent=None):
-        super(WindowHandler, self).__init__(parent)
+    def __init__(self):
+        super(WindowHandler, self).__init__()
         self.resize(self.WIDTH, self.HEIGHT)
-        self.setWindowTitle("Python Screen Share")
+        self.center()
+        # Window title is set by the individual window classes
 
         self.start_window()
 
@@ -163,27 +125,36 @@ class WindowHandler(QMainWindow):
         self.show()
 
     def start_join_screen(self):
-        print("Joined!")
         self.username = self.window.uname_input.text()
         self.ip = self.window.ip_input.text()
         self.port = self.window.port_input.text()
         print(self.username)
+
         self.join_menu = JoinServerMenu(self.ip, self.port, self.username, parent=self)
         self.setCentralWidget(self.join_menu)
         self.join_menu.back.clicked.connect(self.start_window)
         self.show()
 
     def start_create_screen(self):
-        print("Created!")
         self.username = self.window.uname_input.text()
         self.ip = self.window.ip_input.text()
         self.port = self.window.port_input.text()
         print(self.username)
+
         self.create_menu = CreateServerMenu(self.ip, self.port, self.username, parent=self)
         self.setCentralWidget(self.create_menu)
         self.create_menu.back.clicked.connect(self.start_window)
         self.show()
 
+    def center(self):
+        win = self.frameGeometry()
+        center_pt = QDesktopWidget().availableGeometry().center()
+        win.moveCenter(center_pt)
+
+    def add_btn(self, x, y, label, parent):
+        btn = QPushButton(text=label, parent=parent)
+        btn.move(x, y)
+        return btn
 
 
 def main():
